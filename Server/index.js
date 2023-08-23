@@ -5,29 +5,30 @@ const Todomodel = require("./Models/Todo")
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
-const UserModel = require('./Models/Todo')
+const UserModel = require('./Models/User')
+const RegisterModel = require("./Models/Register")
 
 const app = express()
-app.use(cors({
-    origin: ["http://localhost:5173"],
-    methods: ["GET", "POST"],
-    credentials: true
-}))
+app.use(cors())
 app.use(cookieParser())
 
 app.use(express.json())
-
 
 mongoose.connect("mongodb://localhost:27017/task")
 
 app.post('/register', (req, res) => {
     const {name, email, password} = req.body;
-    bcrypt.hash(password, 10)
-    .then(hash => {
-        UserModel.create({name, email, password: hash})
-        .then(user => res.json("Success"))
-        .catch(err => res.json(err))
-    }).catch(err => res.json(err))
+    RegisterModel.findOne({email: email})
+    .then(user => {
+        if(user){
+            res.json("Already have an account")
+        }else{
+            RegisterModel.create({name:name, email:email, password:password})
+            .then(result => res.json(result))
+            .catch(err => res.json(err))
+        }
+    })
+    .catch(err => res.json(err))
 })
 
 app.post('/login', (req, res) => {
@@ -35,18 +36,13 @@ app.post('/login', (req, res) => {
     UserModel.findOne({email: email})
     .then(user => {
         if(user) {
-            bcrypt.compare(password, user.password, (err, response) => {
-                if(response) {
-                  const token = jwt.sign({email: user.email, role: user.role},
-                        "jwt-secret-key", {expiresIn: '1d'})  
-                    res.cookie('token', token)
-                    return res.json({Status: "Success", role: user.role})
-                }else {
-                    return res.json("The password is incorrect")
-                }
-            })
+           if(user.password === password) {
+            res.json("Login Successfully")
+           }else{
+            res.json("The password is incorrect")
+           }
         } else {
-            return res.json("No record existed")
+            res.json("No record existed")
         }
     })
 })

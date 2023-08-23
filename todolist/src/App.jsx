@@ -17,6 +17,7 @@ function App() {
         <Route path="/register" element={<Signup />}></Route>
       </Routes>
     </BrowserRouter>
+    {/* <Home /> */}
     </>
   )
 }
